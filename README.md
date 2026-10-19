@@ -4,6 +4,10 @@ A movie recommender with **no ML libraries**: biased matrix factorization
 trained with hand-written SGD in NumPy, served behind FastAPI with a UI
 where you rate a few movies and instantly fold into the model.
 
+- **Demo video**: https://drive.google.com/file/d/1QvmNTP7W49CuSrHEUtvS4w_dx34FgOhr/view
+- **Project report (PDF)**: https://drive.google.com/file/d/1UzCXGLaNFC7bchN2M-2JO2Uz7oSKpiO_/view
+
+
 - MovieLens 100k, official u1.base/u1.test split (80k/20k)
 - **Test RMSE 0.934** vs 1.154 global-mean baseline (-19%)
 - Precision@10 0.143, Recall@10 0.051 (honest top-N numbers, see docs/eval-report.json)
