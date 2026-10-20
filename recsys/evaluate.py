@@ -26,8 +26,11 @@ def precision_recall_at_k(model, train, test, k=10, relevant=4.0, max_users=300)
         scores = model.predict_user_all(u)
         for i in seen.get(u, ()):
             scores[i] = -np.inf           # never recommend what they saw
-        topk = set(np.argpartition(-scores, k)[:k].tolist())
+        kk = min(k, len(scores) - 1)   # argpartition requires kth < len(scores)
+        topk = set(np.argpartition(-scores, kk)[:kk].tolist())
         hit = len(topk & liked)
         precisions.append(hit / k)
         recalls.append(hit / len(liked))
+    if not precisions:
+        return 0.0, 0.0                # no eligible users -> avoid NaN
     return float(np.mean(precisions)), float(np.mean(recalls))

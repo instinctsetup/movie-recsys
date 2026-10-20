@@ -5,7 +5,7 @@ import numpy as np
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from recsys.mf import MatrixFactorization
 
@@ -27,6 +27,11 @@ Qn = model.Q / (np.linalg.norm(model.Q, axis=1, keepdims=True) + 1e-9)
 # Counts come from the actual ratings file, not the id map.
 from recsys import data as _data
 _tr = _data.load_ratings("data/u1.base")      # same file/order as train.py -> identical maps
+# saved maps also carry test-only items (load_ratings extends shared dicts), so
+# verify agreement on the training ids instead of full equality
+assert all(i_map.get(k) == v for k, v in _tr[4].items()), \
+    "id_maps.json conflicts with data/u1.base - rerun train.py"
+assert len(i_map) == model.Q.shape[0], "id_maps.json / factors.npz item-count mismatch"
 _internal_popular = np.argsort(-np.bincount(_tr[1], minlength=model.Q.shape[0]))
 POPULAR = [int(internal_to_ml[i]) for i in _internal_popular if int(i) in internal_to_ml]
 
@@ -35,6 +40,14 @@ app = FastAPI(title="Movie RecSys")
 
 class Ratings(BaseModel):
     ratings: dict[int, float]          # MovieLens item id -> 1..5
+
+    @field_validator("ratings")
+    @classmethod
+    def validate_range(cls, v):
+        bad = [k for k, r in v.items() if not (1.0 <= r <= 5.0)]
+        if bad:
+            raise ValueError(f"ratings must be in [1,5], bad ids: {bad}")
+        return v
 
 
 @app.get("/")
@@ -56,7 +69,8 @@ def recommend(body: Ratings):
     scores, _ = model.fold_in(rated)
     for i in rated:
         scores[i] = -np.inf              # never recommend what you already rated
-    top = np.argpartition(-scores, 10)[:10]
+    k = min(10, len(scores) - 1)     # argpartition requires kth < len(scores)
+    top = np.argpartition(-scores, k)[:k]
     top = top[np.argsort(-scores[top])]
 
     liked = [i for i, r in rated.items() if r >= 4.0]

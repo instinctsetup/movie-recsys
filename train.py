@@ -26,7 +26,10 @@ report["recall_at_10"] = round(r, 4)
 print(json.dumps(report, indent=2))
 
 np.savez("recsys/factors.npz", P=model.P, Q=model.Q, bu=model.bu, bi=model.bi, mu=model.mu)
-json.dump({str(k): v for k, v in data.load_titles().items()}, open("recsys/titles.json", "w"))
-json.dump({"users": train[3], "items": train[4]}, open("recsys/id_maps.json", "w"))
-json.dump(report, open("docs/eval-report.json", "w"), indent=2)
+with open("recsys/titles.json", "w") as f:
+    json.dump({str(k): v for k, v in data.load_titles().items()}, f)
+with open("recsys/id_maps.json", "w") as f:
+    json.dump({"users": train[3], "items": train[4]}, f)
+with open("docs/eval-report.json", "w") as f:
+    json.dump(report, f, indent=2)
 print("artifacts saved")

@@ -9,12 +9,13 @@ DATA = Path(__file__).parent.parent / "data"
 
 def load_titles(path=None):
     titles = {}
-    for line in open(path or DATA / "u.item", encoding="latin-1"):
-        parts = line.split("|")
-        if len(parts) > 1:
-            t = re.sub(r"\s*\(\d{4}\)\s*$", "", parts[1]).strip()
-            year = re.search(r"\((\d{4})\)", parts[1])
-            titles[int(parts[0])] = {"title": t, "year": year.group(1) if year else ""}
+    with open(path or DATA / "u.item", encoding="latin-1") as f:
+        for line in f:
+            parts = line.split("|")
+            if len(parts) > 1:
+                t = re.sub(r"\s*\(\d{4}\)\s*$", "", parts[1]).strip()
+                year = re.search(r"\((\d{4})\)", parts[1])
+                titles[int(parts[0])] = {"title": t, "year": year.group(1) if year else ""}
     return titles
 
 
@@ -26,11 +27,12 @@ def load_ratings(path, u_map=None, i_map=None):
     users, items, ratings = [], [], []
     u_map = {} if u_map is None else u_map
     i_map = {} if i_map is None else i_map
-    for line in open(path):
-        u, i, r, _ = line.split()
-        for raw, lst, mp in ((u, users, u_map), (i, items, i_map)):
-            mp.setdefault(int(raw), len(mp))
-            lst.append(mp[int(raw)])
-        ratings.append(float(r))
+    with open(path) as f:
+        for line in f:
+            u, i, r, _ = line.split()
+            for raw, lst, mp in ((u, users, u_map), (i, items, i_map)):
+                mp.setdefault(int(raw), len(mp))
+                lst.append(mp[int(raw)])
+            ratings.append(float(r))
     return (np.array(users), np.array(items), np.array(ratings),
             u_map, i_map)
